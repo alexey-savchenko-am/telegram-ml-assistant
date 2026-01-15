@@ -1,4 +1,4 @@
-# Telegram GPT Assistant Bot
+# telegram-ml-assistant
 
 A lightweight, asynchronous Telegram bot built with **Telethon** that integrates a **ChatGPT-based assistant**.  
 The bot responds only to allowed users and only when trigger words are detected (either in the message itself or in a replied message).
