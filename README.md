@@ -20,10 +20,6 @@ The bot responds only to allowed users and only when trigger words are detected 
 
 ## Architecture Overview
 
-telegram_bot.py → Telegram client & message filtering
-chatgpt_assistant.py → ChatGPT integration
-message_handler.py → Message handler interface
-
 **Flow:**
 
 1. Telegram receives a new message
