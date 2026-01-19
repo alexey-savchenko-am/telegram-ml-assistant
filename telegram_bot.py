@@ -1,6 +1,7 @@
 import re
 import time
 import asyncio
+import random
 from typing import Iterable
 from telethon import TelegramClient, events
 from telethon.tl.types import User, InputPeerUser
@@ -9,6 +10,11 @@ from telethon.tl.types import User, Chat, Channel, MessageEntityMentionName, Dia
 from message_sender import MessageSender
 from message import ChatMessage
 from message_handler import ChatMessageHandler
+from enum import StrEnum
+
+class PrefferedLanguage(StrEnum):
+    RU = "ru"
+    EN = "en"
 
 class TelegramBot:
     def __init__(
@@ -67,7 +73,15 @@ class TelegramBot:
         if not await self._process_event(event):
             return
 
-        addressed_to_me: bool = await self._addressed_to_me(event)
+        addressed = await self._addressed_to_me(event)
+        addressed_to_me = (
+            addressed
+            or (
+                event.is_group
+                and random.random() <= 0.1
+            )
+        )
+
         chat: User | Chat | Channel = await event.get_chat()
         sender: User | None = await event.get_sender()
 
@@ -84,9 +98,16 @@ class TelegramBot:
 
         print(f"[{name_type[1]}] {name_type[0]} ({chat.id}): {sender_name} → {text}")
 
+        content = (
+            f"[SENDER: {sender_name}, "
+            f"RECIPIENT: {name_type[0]}, "
+            f"ADVICE: {'Apologize for the interruption before replying. Give advice to the recipient.' if not addressed_to_me else 'Reply concisely and stay on topic.'}] "
+            f"{text}"
+        )
+
         msg = ChatMessage(
             role="user", 
-            content=f"[SENDER: {sender_name}, RECIPIENT: {name_type[0]}]: {text}",
+            content=content,
         )
 
         queue = self._ensure_chat_worker(chat.id)
@@ -105,7 +126,7 @@ class TelegramBot:
     
     async def _chat_worker(self, chat_id: int, queue: asyncio.Queue) -> None:
 
-        message_handler = ChatMessageHandler(chat_id)
+        message_handler = ChatMessageHandler(self._name, chat_id)
 
         while True:
             event, msg, addressed_to_me = await queue.get()
@@ -155,7 +176,7 @@ class TelegramBot:
         return False
     
     def _format_message(self, msg: ChatMessage, elapsed: float) -> str:
-        return f"[{self._name} 💬🤖🔥]\n{elapsed:.2f} sec elapsed\n{msg.content}" if msg else None
+        return f"[{self._name} 💬🤖🔥]\n{elapsed:.2f} s\n{msg.content}" if msg else None
     
     @staticmethod
     def _get_chat_name_and_type(

@@ -14,19 +14,19 @@ class ChatAssistant(Protocol):
 class ChatGPTAssistant:
     def __init__(
         self,
+        name: str,
         chat_id: int,
-        model: str = "gpt-5-mini",
+        model: str,
         system_prompt: str | None = None,
     ) -> None:
         self._chat_id = chat_id
         self._client = OpenAI()
         self._model = model
         self._system_prompt = system_prompt or (
-            "Ты полезный ассистент по имени Леха."
-            "К тебе приходят сообщения, в них содержится имя отправителя и получателя."
-            "Обращайся к отправителю по имени в ответе."
-            "Отвечай кратко, без дополнительных вопросов, по делу."
-            "ТЫ ЛЕХА И НЕ ПОЗВОЛЯЙ ОБЗЫВАТЬ ТЕБЯ ПО ДРУГОМУ."
+            f"You are a helpful assistant named {name}. "
+            "You receive messages that contain the sender's and recipient's names. "
+            "Address the sender by name in your reply. "
+            "Reply in the same language as the message text."
         )
 
     @property
@@ -40,6 +40,7 @@ class ChatGPTAssistant:
         
         openai_messages: list[dict[str, str]] = [
             {"role": "system", "content": self._system_prompt},
+            {"role": "system", "content": f"Chat ID: {self.chat_id}"},
         ]
 
         for msg in messages:
@@ -61,13 +62,13 @@ class ChatGPTAssistant:
             )
 
         except Exception as exc:
-            raise RuntimeError("ChatGPT request failed") from exc
+            raise RuntimeError(f"ChatGPT request failed for Chat {self.chat_id}") from exc
         
 class InMemoryAssistant:
     def __init__(
         self,
         assistant: ChatAssistant,
-        context_size: int = 10,
+        context_size: int = 50,
     ) -> None:
         self._assistant = assistant
         self._context_size = context_size
@@ -91,3 +92,64 @@ class InMemoryAssistant:
 
     def clear_cache(self) -> None:
         self._history.clear()
+
+class RoutingAssistant:
+    def __init__(
+        self,
+        name: str,
+        chat_id: int,
+        fast_model: str = "gpt-4o-mini",
+        smart_model: str = "gpt-5-mini",
+        system_prompt: str | None = None,
+    ) -> None:
+        self._fast = ChatGPTAssistant(
+            name=name,
+            chat_id=chat_id,
+            model=fast_model,
+            system_prompt=system_prompt,
+        )
+        self._smart = ChatGPTAssistant(
+            name=name,
+            chat_id=chat_id,
+            model=smart_model,
+            system_prompt=system_prompt,
+        )
+
+    def process(
+        self,
+        messages: Sequence[ChatMessage],
+        need_reply: bool = True,
+    ) -> ChatMessage | None:
+
+        if not need_reply:
+            return None
+
+        if self._is_complex(messages):
+            return self._smart.process(messages, need_reply)
+
+        return self._fast.process(messages, need_reply)
+    
+    def _is_complex(self, messages: Sequence[ChatMessage]):
+        last = messages[-1].content
+
+        score = 0
+
+        if len(last) > 100:
+            score += 2
+
+        if len(last.split()) > 20:
+            score += 2
+
+        newlines = last.count('\n')
+        if newlines >= 1:
+            score += 1
+        if newlines >= 3:
+            score += 2
+
+        if last.count('?') >= 2:
+            score += 1
+
+        if any(x in last for x in ('\n-', '\n*', '\n1.', '```')):
+            score += 3
+
+        return score >= 4

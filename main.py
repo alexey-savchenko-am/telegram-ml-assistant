@@ -50,7 +50,7 @@ async def main() -> None:
     api_id = int(os.getenv("API_ID", "0"))
     api_hash = os.getenv("API_HASH")
 
-    client = TelegramClient("session", api_id, api_hash)
+    client = TelegramClient("sessions/session", api_id, api_hash)
     
     await client.start()
 
