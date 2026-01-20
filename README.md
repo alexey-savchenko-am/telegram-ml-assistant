@@ -1,6 +1,6 @@
 # telegram-ml-assistant
 
-A lightweight, asynchronous Telegram bot built with **Telethon** that integrates a **ChatGPT-based assistant**.  
+A lightweight, asynchronous Telegram **userbot** built with **Telethon** that integrates a **ChatGPT-based assistant**.  
 
 ---
 
