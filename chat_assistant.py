@@ -24,7 +24,7 @@ class ChatGPTAssistant:
         self._model = model
         self._system_prompt = system_prompt or (
             f"You are a helpful assistant named {name}. "
-            "You receive messages that contain the sender's and recipient's names. "
+            "You receive messages that contain the sender's names. "
             "Address the sender by name in your reply. "
             "Reply in the same language as the message text."
         )

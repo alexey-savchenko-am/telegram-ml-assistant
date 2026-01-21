@@ -11,6 +11,7 @@ from message_sender import MessageSender
 from message import ChatMessage
 from message_handler import ChatMessageHandler
 from enum import StrEnum
+from chat import UserChat
 
 class PrefferedLanguage(StrEnum):
     RU = "ru"
@@ -46,6 +47,7 @@ class TelegramBot:
 
         self._chat_queues: dict[int, asyncio.Queue] = {}
         self._chat_workers: dict[int, asyncio.Task] = {}
+        self._message_handlers: dict[int, ChatMessageHandler] = {}
 
         self._client.add_event_handler(
             self._on_message, 
@@ -59,14 +61,26 @@ class TelegramBot:
 
     def disallow_chat(self, chat_id: int) -> None:
         self._allowed_chat_ids.discard(chat_id)
+    
+    async def list_chats(self, filter: str | None) -> list[UserChat]: 
+        result: list[UserChat] = []
+        async for dialog in self._client.iter_dialogs(): #dialog: Dialog
+            if not filter or filter in dialog.name:
+                result.append(
+                    UserChat(
+                        id=dialog.id, 
+                        name=dialog.name or ""
+                    )
+                )
+        return result
 
     async def generate_and_send_message(self, chat_id: int, prompt: str) -> None:
         try:
-            generated_message = await self._handler(chat_id, prompt)  # type: ignore[arg-type]
-            if generated_message:
-                await self._message_sender.send(chat_id, generated_message)
+            handler = self._ensure_handler(chat_id)
+            response = await handler(ChatMessage(role="system", content=prompt), True)
+            await self._message_sender.send(chat_id, self._format_message(response, elapsed=1))
         except Exception as exc:
-                print("Handler error:", exc)
+                print(f"Handler error for chat {chat_id}:", exc)
 
     async def _on_message(self, event: events.NewMessage.Event) -> None:
 
@@ -99,9 +113,7 @@ class TelegramBot:
         print(f"[{name_type[1]}] {name_type[0]} ({chat.id}): {sender_name} → {text}")
 
         content = (
-            f"[SENDER: {sender_name}, "
-            f"RECIPIENT: {name_type[0]}, "
-            f"ADVICE: {'Apologize for the interruption before replying. Give advice to the recipient.' if not addressed_to_me else 'Reply concisely and stay on topic.'}] "
+            f"[ FROM: {sender_name} ] "
             f"{text}"
         )
 
@@ -126,7 +138,7 @@ class TelegramBot:
     
     async def _chat_worker(self, chat_id: int, queue: asyncio.Queue) -> None:
 
-        message_handler = ChatMessageHandler(self._name, chat_id)
+        message_handler = self._ensure_handler(chat_id)
 
         while True:
             event, msg, addressed_to_me = await queue.get()
@@ -147,7 +159,15 @@ class TelegramBot:
                 print(f"Handler error in chat {chat_id}:", exc)
             finally:
                 queue.task_done()
-                
+
+    def _ensure_handler(self, chat_id: int) -> ChatMessageHandler:
+        if chat_id in self._message_handlers:
+            return self._message_handlers[chat_id]
+
+        handler = ChatMessageHandler(self._name, chat_id)
+        self._message_handlers[chat_id] = handler
+        return handler       
+    
     async def _process_event(self, event: events.NewMessage.Event) -> bool:
 
         mid = event.chat_id or event.user_id
