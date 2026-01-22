@@ -41,10 +41,11 @@ A lightweight, asynchronous Telegram **userbot** built with **Telethon** that in
 
 ## Setup
 
-### Create a .env file:
+### Create a .env file
 
 ```env
 API_ID=your_telegram_api_id
 API_HASH=your_telegram_api_hash
 OPENAI_API_KEY=your_openai_api_key
 ```
+
