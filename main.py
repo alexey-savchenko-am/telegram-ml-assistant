@@ -6,8 +6,6 @@ from dotenv import load_dotenv
 from message_sender import TelegramMessageSender
 from cli import Cli
 
-
-
 async def main() -> None:
 
     load_dotenv()
