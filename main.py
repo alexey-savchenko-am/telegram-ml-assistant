@@ -12,6 +12,7 @@ async def main() -> None:
 
     api_id = int(os.getenv("API_ID", "0"))
     api_hash = os.getenv("API_HASH")
+    bot_name = "AssistantGPT"
 
     client = TelegramClient("sessions/session", api_id, api_hash)
     
@@ -20,12 +21,12 @@ async def main() -> None:
     user = await client.get_me()
 
     bot = TelegramBot(
-        name="LyohaGPT",
+        name=bot_name,
         client=client,
         message_sender=TelegramMessageSender(client),
         user=user,
-        trigger_words=["Леха", "Лёха", "LyohaGPT"],
-        allowed_chat_ids=[18866739,311022903,18001035,1190128587,749558910]
+        trigger_words=["chat"],
+        allowed_chat_ids=[]
     )
 
     await Cli(bot).start()
