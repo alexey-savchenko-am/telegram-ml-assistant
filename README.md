@@ -40,12 +40,23 @@ A lightweight, asynchronous Telegram **userbot** built with **Telethon** that in
 ---
 
 ## Setup
-
-### Create a .env file
+### 1. Clone the repository
+```bash
+git clone https://github.com/alexey-savchenko-am/telegram-ml-assistant.git
+cd telegram-ml-assistant
+```
+### 2. Create a .env file in the root 
 
 ```env
 API_ID=your_telegram_api_id
 API_HASH=your_telegram_api_hash
 OPENAI_API_KEY=your_openai_api_key
+```
+
+### 3. Create sessions folder & start Docker
+
+```bash
+mkdir sessions
+docker compose up --build --force-recreate
 ```
 
