@@ -1,6 +1,6 @@
 # telegram-ml-assistant
 
-A lightweight, asynchronous Telegram **userbot** built with **Telethon** that integrates a **ChatGPT-based assistant**
+A lightweight, asynchronous Telegram **userbot** built with **Telethon** that integrates a **ChatGPT-based assistant**.
 
 ---
 
@@ -45,7 +45,7 @@ A lightweight, asynchronous Telegram **userbot** built with **Telethon** that in
 git clone https://github.com/alexey-savchenko-am/telegram-ml-assistant.git
 cd telegram-ml-assistant
 ```
-### 2. Create a .env file in the root 
+### 2. Create an .env file in the root 
 
 ```env
 API_ID=your_telegram_api_id
